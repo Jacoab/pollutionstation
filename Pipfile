@@ -6,8 +6,18 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-flask = "*"
+Flask = "*"
 pymongo = "*"
+Flask-JWT = "*"
+sensirion-sps030 = "*"
+adafruit-circuitpython-bme680 = "*"
+Adafruit-Blinka = "*"
+adafruit-blinka = "*"
+flask = "*"
+flask-restful = "*"
+flask-sse = "*"
+gunicorn = "*"
+gevent = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.7.3"
