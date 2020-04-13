@@ -1,5 +1,6 @@
-from flask import Flask, Response
+from flask import Flask, Response 
 from flask_restful import Resource, Api
+from common.datalog import DataLog
 #from resources import Config
 import json
 import board
@@ -19,17 +20,17 @@ api = Api(app)
 
 # Views for the REST API
 @app.route('/data')
-def data_stream():
-    def generate():
+def data_stream(): 
+    def generate(): 
         while True:
-            yield '{}'.format(sensor.gas)
-            time.sleep(3)
+            data = DataLog(gas=sensor.gas,
+                           temperature=sensor.temperature,
+                           humidity=sensor.humidity,
+                           pressure=sensor.pressure)
+            yield json.dumps(data.__dict__)
+             time.sleep(3)
 
     return Response(generate(), mimetype='text/event-stream') 
-
-@app.route('/test')
-def test():
-    return "TEST BALLZ"
 
 # Resources for the REST API
 #api.add_resource(Config, '/config')
