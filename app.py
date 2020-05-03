@@ -1,5 +1,6 @@
 from flask import Flask, Response 
 from flask_restful import Resource, Api
+from flask_cors import CORS
 from common.datalog import DataLog
 #from resources import Config
 import json
@@ -16,7 +17,7 @@ with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 app = Flask(__name__)
-api = Api(app)
+api = CORS(app)
 
 # Views for the REST API
 @app.route('/data')
@@ -27,8 +28,9 @@ def data_stream():
                            temperature=sensor.temperature,
                            humidity=sensor.humidity,
                            pressure=sensor.pressure)
-            yield json.dumps(data.__dict__)
-             time.sleep(3)
+            data_str = json.dumps(data.__dict__)
+            formatted_data = 'data: ' + data_str + '\n\n'
+            yield formatted_data
 
     return Response(generate(), mimetype='text/event-stream') 
 
