@@ -18,6 +18,12 @@ flask-restful = "*"
 flask-sse = "*"
 gunicorn = "*"
 gevent = "*"
+flask-cors = "*"
+sps30 = "*"
+smbus2 = "*"
+pigpio = "*"
+crcmod = "*"
+ipython = "*"
 
 [requires]
 python_version = "3.7.3"

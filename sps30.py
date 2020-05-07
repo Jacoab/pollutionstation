@@ -282,7 +282,7 @@ class SPS30:
         self.reset()
         time.sleep(0.1)  # note: needed after reset
 
-
+'''
 if __name__ == "__main__":
     sps30 = SPS30()
 
@@ -315,3 +315,4 @@ if __name__ == "__main__":
 
         sps30.readPMValues()
         time.sleep(0.9)
+'''

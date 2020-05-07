@@ -4,11 +4,12 @@ from busio import I2C
 import adafruit_bme680
 import json
 import time
-from .sps30 import SPS30, eprint
+#from sps30 import SPS30, eprint
 
 
 class SensorStream:
 
+    TEN_SECONDS = 10
     THIRTY_SECONDS = 30
     MINUTE = 60
     THIRTY_MINUTES = 30 * MINUTE
@@ -30,7 +31,15 @@ class SensorStream:
         (155.0, 254.0): 'unhealthy for sensitive groups',
         (255.0, 354.0): 'unhealthy',
         (355.0, 424.0): 'very unhealthy',
-        (400.0, 700.0): 'hazardous'
+        (400.0, 1000000.0): 'hazardous'
+    }
+    GAS_INDEX = {
+        (521177.0, 431331.0): 'good',
+        (431331.0, 213212.0): 'moderate',
+        (213212.0, 54586.0): 'unhealthy for sensitive groups',
+        (54586.0, 27080.0): 'unhealthy',
+        (27080.0, 13591.0): 'very unhealthy',
+        (13591.0, 8000.0): 'hazardous'
     }
 
     def __init__(self, use_sps30=True, use_bme680=True):
@@ -57,9 +66,9 @@ class SensorStream:
             self.sps30.initialize()
 
     def get_data(self):
-        data = {'bme680': {}, 'sps30': {}}
+        data = {}
         if self.use_bme680:
-            data['bme680'] = {
+            data = {
                 'gas': self.bme680.gas,
                 'temperature': self.bme680.temperature,
                 'humidity': self.bme680.humidity,
@@ -78,30 +87,46 @@ class SensorStream:
 
             data['sps30'] = self.sps30.readPMValues()
             time.sleep(0.9)
-
+            data['sps30']['pm2p5'] = (data['sps30']['pm2p5'] - data['sps30']['nc2p5'])/11000
         return data
 
     def time_avg(self, time_period):
-        pm10p0_sum = 0.0
-        pm2p5_sum = 0.0
+        #pm10p0_sum = 0.0
+        #pm2p5_sum = 0.0
         gas_sum = 0.0
         collection_count = 0
 
         t_end = time.time() + time_period
         while time.time() < t_end:
             state_dict = self.get_data()
-
+            #print(state_dict)
             collection_count += 1
-            pm10p0_sum += state_dict['pm2p5']
-            pm2p5_sum += state_dict['pm10p0']
+
+            #pm10p0_sum += state_dict['sps30']['pm10p0']
+            #pm2p5_sum += state_dict['sps30']['pm2p5']
             gas_sum += state_dict['gas']
 
-        return {'pm10p0_avg': pm10p0_sum/collection_count,
-                'pm2p5_avg': pm2p5_sum/collection_count,
-                'gas_avg': pm2p5_sum}
+        return gas_sum/collection_count
 
-    def stream(self):
-        while True:
-            avg_data = self.time_avg()
-            json_str = json.dumps(avg_data)
-            yield json_str
+    def get_quality(self, avg):
+        quality = {}
+        for key in self.PM2p5_INDEX.keys():
+            if key[0] <= avg['pm2p5_avg'] <= key[1]:
+                quality['quality'] = self.PM2p5_INDEX[key]
+
+        for key in self.GAS_INDEX:
+            if key[0] >= avg >= key[1]:
+                quality['quality'] = self.GAS_INDEX[key]
+
+        return quality
+
+
+if __name__ == '__main__':
+    streamer = SensorStream()
+
+    while True:
+        avg_data = streamer.time_avg(SensorStream.TEN_SECONDS)
+        quality = streamer.get_quality(avg_data)
+
+        print('Air Quality: ', quality['quality'])
+    #print('PM10p5 Quality: ', quality['pm10p0_quality'])
